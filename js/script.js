@@ -91,10 +91,50 @@ document.addEventListener('DOMContentLoaded', () => {
         tick();
     }
 
-    // ===== CONTACT FORM =====
-    document.getElementById('contact-form')?.addEventListener('submit', function () {
-        const btn = this.querySelector('.btn-submit');
-        if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
+    // ===== CONTACT FORM — Formspree AJAX =====
+    const form = document.getElementById('contact-form');
+    const successMsg = document.getElementById('form-success-msg');
+
+    form?.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const btn = form.querySelector('.btn-submit');
+        const originalText = btn.textContent;
+        btn.textContent = 'Sending…';
+        btn.disabled = true;
+
+        try {
+            const data = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: data,
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (response.ok) {
+                // Show success message
+                successMsg.textContent = "Message sent successfully! I'll get back to you soon.";
+                successMsg.classList.add('show');
+                form.reset();
+                // Scroll success into view
+                successMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                const json = await response.json();
+                const errText = json?.errors?.map(e => e.message).join(', ')
+                    || 'Something went wrong. Please try emailing me directly.';
+                successMsg.textContent = errText;
+                successMsg.classList.add('show');
+                successMsg.style.background = 'rgba(239,68,68,0.08)';
+                successMsg.style.borderColor = 'rgba(239,68,68,0.3)';
+                successMsg.style.color = '#ef4444';
+            }
+        } catch (_) {
+            successMsg.textContent = 'Network error. Please email me at arosh1126@gmail.com';
+            successMsg.classList.add('show');
+        } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
     });
 
 });
